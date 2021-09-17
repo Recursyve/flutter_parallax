@@ -166,19 +166,43 @@ abstract class ParallaxWithAxisDirectionDelegate extends ParallaxDelegate {
     }
   }
 
+  @override
   double getChildScrollRatio(
-      Offset offsetUnit, double childExtent, RenderBox renderBox);
+      Offset offsetUnit, double childExtent, RenderBox renderBox) {
+    final RenderAbstractViewport viewport =
+    RenderAbstractViewport.of(renderBox);
+    assert(viewport != null);
 
-  AxisDirection _getParallaxDirection() {
-    AxisDirection parallaxDirection =
-        direction ?? controller?.position?.axisDirection;
-    if (flipDirection) {
-      parallaxDirection = flipAxisDirection(parallaxDirection);
+
+    assert(renderBox != null);
+    final ScrollPosition position = controller.position;
+    assert(position != null);
+    final bool isHorizontalAxis = (position.axis == Axis.horizontal);
+
+
+    final Offset localPositionOffset = isHorizontalAxis
+        ? new Offset(mainAxisExtent, 0.0)
+        : new Offset(0.0, mainAxisExtent);//offsetUnit * mainAxisExtent;
+
+    assert(localPositionOffset != null);
+    Offset positionInViewport;
+    try{
+      positionInViewport = renderBox.localToGlobal(localPositionOffset, ancestor: viewport);
+    } catch(e,s){
+
     }
-    assert(parallaxDirection != null);
-    return parallaxDirection;
+    if(positionInViewport == null){
+      return 0;
+    }
+
+    // One dimension should be 0.0, so this should be ok.
+    final double distanceFromLeading =
+    math.max(positionInViewport.dx, positionInViewport.dy);
+    assert(distanceFromLeading != null);
+    double scrollRatio = distanceFromLeading /
+        (controller.position.viewportDimension + mainAxisExtent);
+    return scrollRatio;
   }
-}
 
 /// A parallax delegate for a widget inside a scroll view.
 ///
